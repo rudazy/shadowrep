@@ -2,6 +2,11 @@
 
 Confidential on-chain reputation protocol built on Zama's fhEVM. Attestations and scores remain encrypted using Fully Homomorphic Encryption (FHE).
 
+## Live Deployment
+
+- **Contract:** [0x41fa55ceFD625E50Fa1Ae08bAeA87aC5C8BE0aD7](https://sepolia.etherscan.io/address/0x41fa55ceFD625E50Fa1Ae08bAeA87aC5C8BE0aD7#code)
+- **Network:** Ethereum Sepolia Testnet
+
 ## Overview
 
 Traditional on-chain reputation systems expose all data publicly, enabling gaming and manipulation. ShadowRep keeps reputation data encrypted while still allowing verification.
@@ -43,12 +48,21 @@ npx hardhat test                 # Run tests
 npx hardhat deploy --network sepolia  # Deploy to Sepolia
 ```
 
+## Frontend
+```bash
+cd frontend
+npm install
+npm run dev                      # Start development server
+npm run build                    # Build for production
+```
+
 ## Configuration
 
 Set required variables before deploying:
 ```bash
 npx hardhat vars set MNEMONIC
 npx hardhat vars set INFURA_API_KEY
+npx hardhat vars set ETHERSCAN_API_KEY
 ```
 
 ## Use Cases
@@ -61,9 +75,27 @@ npx hardhat vars set INFURA_API_KEY
 ## Tech Stack
 
 - Zama fhEVM
-- Solidity 0.8.24
+- Solidity 0.8.27
 - Hardhat
+- React + TypeScript
+- ethers.js v6
 - OpenZeppelin Contracts
+
+## Project Structure
+```
+shadowrep/
+├── contracts/
+│   └── ShadowRep.sol
+├── deploy/
+│   └── deploy.ts
+├── test/
+│   └── ShadowRep.ts
+├── frontend/
+│   └── src/
+│       ├── App.tsx
+│       └── contracts/
+└── hardhat.config.ts
+```
 
 ## License
 
