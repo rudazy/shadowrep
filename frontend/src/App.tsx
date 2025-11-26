@@ -4,7 +4,7 @@ import ShadowRepABI from './contracts/ShadowRep.json';
 import './App.css';
 
 // Contract address - update after deploying to Sepolia
-const CONTRACT_ADDRESS = "YOUR_CONTRACT_ADDRESS_HERE";
+const CONTRACT_ADDRESS = "0x41fa55ceFD625E50Fa1Ae08bAeA87aC5C8BE0aD7";
 
 // Sepolia chain ID
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
