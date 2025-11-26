@@ -9,12 +9,20 @@ body {
   background: #0a0a0a;
   color: #ffffff;
   min-height: 100vh;
+  width: 100%;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
 }
 
 .container {
-  max-width: 800px;
+  width: 100%;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 40px 20px;
+  min-height: 100vh;
 }
 
 header {
@@ -32,12 +40,28 @@ header h1 {
 header p {
   font-size: 1rem;
   color: #888;
+  margin-bottom: 16px;
+}
+
+.docs-toggle {
+  width: auto;
+  padding: 10px 24px;
+  background: transparent;
+  border: 1px solid #ffd700;
+  color: #ffd700;
+  font-size: 0.9rem;
+}
+
+.docs-toggle:hover {
+  background: #ffd700;
+  color: #000;
 }
 
 main {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%;
 }
 
 section {
@@ -45,6 +69,56 @@ section {
   border: 1px solid #222;
   border-radius: 12px;
   padding: 24px;
+  width: 100%;
+}
+
+.docs-section {
+  background: #0d0d0d;
+  border-color: #333;
+  text-align: left;
+}
+
+.docs-section h2 {
+  color: #ffd700;
+  margin-bottom: 16px;
+  font-size: 1.5rem;
+}
+
+.docs-section h3 {
+  color: #fff;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+}
+
+.docs-section p {
+  color: #aaa;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.docs-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.docs-section li {
+  color: #aaa;
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.docs-section li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: #ffd700;
+}
+
+.docs-section li strong {
+  color: #fff;
 }
 
 .connect-section {
@@ -171,9 +245,14 @@ footer {
   border-top: 1px solid #222;
 }
 
-footer p {
+footer a {
   font-size: 0.85rem;
-  color: #555;
+  color: #ffd700;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 600px) {

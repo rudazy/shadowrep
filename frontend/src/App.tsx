@@ -3,10 +3,7 @@ import { ethers, BrowserProvider } from 'ethers';
 import ShadowRepABI from './contracts/ShadowRep.json';
 import './App.css';
 
-// Contract address - update after deploying to Sepolia
 const CONTRACT_ADDRESS = "0x41fa55ceFD625E50Fa1Ae08bAeA87aC5C8BE0aD7";
-
-// Sepolia chain ID
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
 
 function App() {
@@ -21,6 +18,7 @@ function App() {
   const [threshold, setThreshold] = useState<string>("100");
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [showDocs, setShowDocs] = useState<boolean>(false);
 
   useEffect(() => {
     if (contract && account) {
@@ -38,12 +36,10 @@ function App() {
       setLoading(true);
       setStatus("Connecting...");
 
-      // Request account access
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
 
-      // Check network
       const chainId = await window.ethereum.request({ method: "eth_chainId" });
       if (chainId !== SEPOLIA_CHAIN_ID) {
         await window.ethereum.request({
@@ -113,9 +109,6 @@ function App() {
     try {
       setLoading(true);
       setStatus("Submitting attestation...");
-
-      // Note: In production, this would use FHE encryption
-      // For demo, we show the flow
       setStatus("FHE encryption would happen here. This is a demo UI.");
       
     } catch (error: any) {
@@ -151,7 +144,50 @@ function App() {
       <header>
         <h1>ShadowRep</h1>
         <p>Confidential On-Chain Reputation Protocol</p>
+        <button className="docs-toggle" onClick={() => setShowDocs(!showDocs)}>
+          {showDocs ? "Hide" : "How It Works"}
+        </button>
       </header>
+
+      {showDocs && (
+        <section className="docs-section">
+          <h2>What is ShadowRep?</h2>
+          <p>
+            ShadowRep is a privacy-preserving reputation system built on Fully Homomorphic Encryption (FHE). 
+            Unlike traditional reputation systems where all scores are public, ShadowRep keeps your reputation 
+            data encrypted at all times.
+          </p>
+          
+          <h3>The Problem</h3>
+          <p>
+            On-chain reputation systems expose all data publicly. Anyone can see who attested to whom and 
+            what scores were given. This enables gaming, stalking, and manipulation.
+          </p>
+          
+          <h3>The Solution</h3>
+          <ul>
+            <li><strong>Encrypted Attestations:</strong> When you give someone a score (1-100), it's encrypted before going on-chain. No one can see the value you gave.</li>
+            <li><strong>Homomorphic Addition:</strong> Scores accumulate on-chain while staying encrypted. The blockchain computes on encrypted data without decrypting it.</li>
+            <li><strong>Threshold Proofs:</strong> Prove you have at least X reputation without revealing your exact score. Perfect for DeFi protocols that need trust verification.</li>
+            <li><strong>Access Control:</strong> You decide which contracts can check your reputation.</li>
+          </ul>
+          
+          <h3>Use Cases</h3>
+          <ul>
+            <li><strong>DeFi Lending:</strong> Get undercollateralized loans based on encrypted reputation</li>
+            <li><strong>DAO Voting:</strong> Weighted voting without revealing individual weights</li>
+            <li><strong>Hiring:</strong> Prove work history without exposing employer details</li>
+            <li><strong>Gaming:</strong> Hidden rankings for fair matchmaking</li>
+          </ul>
+          
+          <h3>Technical Details</h3>
+          <p>
+            Built on Zama's fhEVM, ShadowRep uses the TFHE encryption scheme to enable computation 
+            on encrypted data. The contract stores encrypted uint64 values for scores and uses 
+            homomorphic operations (addition, comparison) to update and verify reputation.
+          </p>
+        </section>
+      )}
 
       <main>
         {!account ? (
@@ -244,7 +280,11 @@ function App() {
       </main>
 
       <footer>
-        <p>Built on Zama fhEVM | Zama Developer Program</p>
+        <p>
+          <a href="https://sepolia.etherscan.io/address/0x41fa55ceFD625E50Fa1Ae08bAeA87aC5C8BE0aD7#code" target="_blank" rel="noopener noreferrer">
+            View Contract on Etherscan
+          </a>
+        </p>
       </footer>
     </div>
   );
