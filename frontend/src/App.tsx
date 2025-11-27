@@ -15,7 +15,6 @@ function App() {
   const [attestTo, setAttestTo] = useState<string>("");
   const [attestScore, setAttestScore] = useState<string>("50");
   const [checkAddress, setCheckAddress] = useState<string>("");
-  const [threshold, setThreshold] = useState<string>("100");
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [showDocs, setShowDocs] = useState<boolean>(false);
@@ -50,7 +49,7 @@ function App() {
 
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      
+
       const shadowRep = new ethers.Contract(
         CONTRACT_ADDRESS,
         ShadowRepABI.abi,
@@ -59,7 +58,7 @@ function App() {
 
       setAccount(accounts[0]);
       setContract(shadowRep);
-      setStatus("Connected");
+      setStatus("Connected to Sepolia");
     } catch (error: any) {
       setStatus("Connection failed: " + error.message);
     } finally {
@@ -88,16 +87,21 @@ function App() {
 
     try {
       setLoading(true);
-      setStatus("Registering...");
+      setStatus("Confirm in MetaMask...");
 
       const tx = await contract.register();
+      setStatus("Transaction pending...");
       await tx.wait();
 
       setIsRegistered(true);
-      setStatus("Registration successful");
+      setStatus("Registration successful! Encrypted profile created.");
       loadUserData();
     } catch (error: any) {
-      setStatus("Registration failed: " + error.message);
+      if (error.code === "ACTION_REJECTED") {
+        setStatus("Transaction cancelled");
+      } else {
+        setStatus("Failed: " + error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -108,32 +112,59 @@ function App() {
 
     try {
       setLoading(true);
-      setStatus("Submitting attestation...");
-      setStatus("FHE encryption would happen here. This is a demo UI.");
-      
+      setStatus("Validating attestation...");
+
+      const isRecipientRegistered = await contract.isRegistered(attestTo);
+      if (!isRecipientRegistered) {
+        setStatus("Error: Recipient is not registered");
+        setLoading(false);
+        return;
+      }
+
+      const alreadyAttested = await contract.hasAttested(account, attestTo);
+      if (alreadyAttested) {
+        setStatus("Error: You already attested to this user");
+        setLoading(false);
+        return;
+      }
+
+      const score = parseInt(attestScore);
+      if (isNaN(score) || score < 1 || score > 100) {
+        setStatus("Error: Score must be 1-100");
+        setLoading(false);
+        return;
+      }
+
+      setStatus(
+        "Validated! The contract's giveAttestation() requires FHE-encrypted input (externalEuint64). " +
+        "In production, score '" + score + "' would be encrypted client-side using Zama's fhevmjs before submission. " +
+        "View the verified contract on Etherscan to see the FHE implementation."
+      );
+
     } catch (error: any) {
-      setStatus("Attestation failed: " + error.message);
+      setStatus("Error: " + error.message);
     } finally {
       setLoading(false);
     }
   }
 
-  async function checkUserThreshold() {
+  async function checkUser() {
     if (!contract || !checkAddress) return;
 
     try {
       setLoading(true);
-      setStatus("Checking threshold...");
+      setStatus("Checking user...");
 
-      const [registered] = await contract.getProfile(checkAddress);
-      
+      const [registered, lastActive] = await contract.getProfile(checkAddress);
+
       if (!registered) {
         setStatus("User is not registered");
       } else {
-        setStatus("User is registered. Threshold check requires FHE decryption.");
+        const date = new Date(Number(lastActive) * 1000);
+        setStatus("User registered. Last active: " + date.toLocaleString());
       }
     } catch (error: any) {
-      setStatus("Check failed: " + error.message);
+      setStatus("Error: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -153,39 +184,39 @@ function App() {
         <section className="docs-section">
           <h2>What is ShadowRep?</h2>
           <p>
-            ShadowRep is a privacy-preserving reputation system built on Fully Homomorphic Encryption (FHE). 
-            Unlike traditional reputation systems where all scores are public, ShadowRep keeps your reputation 
-            data encrypted at all times.
+            A privacy-preserving reputation system built on Zama's Fully Homomorphic Encryption (FHE).
+            Reputation scores stay encrypted at all times - even while being computed on-chain.
           </p>
-          
+
           <h3>The Problem</h3>
           <p>
-            On-chain reputation systems expose all data publicly. Anyone can see who attested to whom and 
-            what scores were given. This enables gaming, stalking, and manipulation.
+            Traditional on-chain reputation exposes all data publicly. Anyone can see scores and attestations,
+            enabling gaming, stalking, and manipulation.
           </p>
-          
+
           <h3>The Solution</h3>
           <ul>
-            <li><strong>Encrypted Attestations:</strong> When you give someone a score (1-100), it's encrypted before going on-chain. No one can see the value you gave.</li>
-            <li><strong>Homomorphic Addition:</strong> Scores accumulate on-chain while staying encrypted. The blockchain computes on encrypted data without decrypting it.</li>
-            <li><strong>Threshold Proofs:</strong> Prove you have at least X reputation without revealing your exact score. Perfect for DeFi protocols that need trust verification.</li>
-            <li><strong>Access Control:</strong> You decide which contracts can check your reputation.</li>
+            <li><strong>Encrypted Attestations:</strong> Scores (1-100) are encrypted before going on-chain</li>
+            <li><strong>Homomorphic Computation:</strong> Scores add up while staying encrypted</li>
+            <li><strong>Threshold Proofs:</strong> Prove you have ≥X reputation without revealing exact score</li>
+            <li><strong>Access Control:</strong> Grant specific contracts permission to check your score</li>
           </ul>
-          
+
+          <h3>Zama FHE Integration</h3>
+          <ul>
+            <li><strong>euint64:</strong> Encrypted 64-bit integers for scores</li>
+            <li><strong>FHE.add():</strong> Homomorphic addition on encrypted values</li>
+            <li><strong>FHE.ge():</strong> Encrypted greater-than-or-equal comparison</li>
+            <li><strong>FHE.allow():</strong> Granular access control for encrypted data</li>
+          </ul>
+
           <h3>Use Cases</h3>
           <ul>
-            <li><strong>DeFi Lending:</strong> Get undercollateralized loans based on encrypted reputation</li>
-            <li><strong>DAO Voting:</strong> Weighted voting without revealing individual weights</li>
-            <li><strong>Hiring:</strong> Prove work history without exposing employer details</li>
+            <li><strong>DeFi:</strong> Undercollateralized lending based on encrypted reputation</li>
+            <li><strong>DAOs:</strong> Weighted voting without revealing weights</li>
+            <li><strong>Hiring:</strong> Prove credentials without exposing details</li>
             <li><strong>Gaming:</strong> Hidden rankings for fair matchmaking</li>
           </ul>
-          
-          <h3>Technical Details</h3>
-          <p>
-            Built on Zama's fhEVM, ShadowRep uses the TFHE encryption scheme to enable computation 
-            on encrypted data. The contract stores encrypted uint64 values for scores and uses 
-            homomorphic operations (addition, comparison) to update and verify reputation.
-          </p>
         </section>
       )}
 
@@ -218,7 +249,7 @@ function App() {
             {!isRegistered ? (
               <section className="register-section">
                 <h2>Get Started</h2>
-                <p>Register to initialize your encrypted reputation profile.</p>
+                <p>Register to create your encrypted reputation profile.</p>
                 <button onClick={register} disabled={loading}>
                   {loading ? "Processing..." : "Register"}
                 </button>
@@ -238,7 +269,6 @@ function App() {
                     type="number"
                     min="1"
                     max="100"
-                    placeholder="Score (1-100)"
                     value={attestScore}
                     onChange={(e) => setAttestScore(e.target.value)}
                   />
@@ -248,22 +278,15 @@ function App() {
                 </section>
 
                 <section className="check-section">
-                  <h2>Check Threshold</h2>
-                  <p>Verify if a user meets a minimum reputation threshold.</p>
+                  <h2>Check User</h2>
+                  <p>Check if a user is registered and their last activity.</p>
                   <input
                     type="text"
                     placeholder="User address (0x...)"
                     value={checkAddress}
                     onChange={(e) => setCheckAddress(e.target.value)}
                   />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Minimum threshold"
-                    value={threshold}
-                    onChange={(e) => setThreshold(e.target.value)}
-                  />
-                  <button onClick={checkUserThreshold} disabled={loading || !checkAddress}>
+                  <button onClick={checkUser} disabled={loading || !checkAddress}>
                     {loading ? "Checking..." : "Check"}
                   </button>
                 </section>
@@ -282,7 +305,11 @@ function App() {
       <footer>
         <p>
           <a href="https://sepolia.etherscan.io/address/0x41fa55ceFD625E50Fa1Ae08bAeA87aC5C8BE0aD7#code" target="_blank" rel="noopener noreferrer">
-            View Contract on Etherscan
+            View Contract
+          </a>
+          {" | "}
+          <a href="https://github.com/rudazy/shadowrep" target="_blank" rel="noopener noreferrer">
+            GitHub
           </a>
         </p>
       </footer>
